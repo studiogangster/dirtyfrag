@@ -25,8 +25,30 @@ build_single_arch_script() {
 #!/usr/bin/env bash
 set -euo pipefail
 
-WORKDIR="\${TMPDIR:-/tmp}/dirtyfrag-probe-\$$"
-mkdir -p "\$WORKDIR"
+pick_workdir() {
+  local candidates=("\${TMPDIR:-}" "/dev/shm" "/var/tmp" "/tmp" "\$PWD")
+  local base dir t
+  for base in "\${candidates[@]}"; do
+    [[ -z "\$base" ]] && continue
+    dir="\$base/dirtyfrag-probe-\$$"
+    mkdir -p "\$dir" 2>/dev/null || continue
+    t="\$dir/.exec-test"
+    printf '#!/usr/bin/env sh\nexit 0\n' > "\$t" 2>/dev/null || { rm -rf "\$dir"; continue; }
+    chmod +x "\$t" 2>/dev/null || { rm -rf "\$dir"; continue; }
+    if "\$t" >/dev/null 2>&1; then
+      rm -f "\$t"
+      echo "\$dir"
+      return 0
+    fi
+    rm -rf "\$dir"
+  done
+  return 1
+}
+
+WORKDIR="\$(pick_workdir)" || {
+  echo "Unable to find an executable temporary directory (tmp may be mounted noexec)." >&2
+  exit 2
+}
 trap 'rm -rf "\$WORKDIR"' EXIT
 
 os="\$(uname -s || true)"
@@ -67,8 +89,30 @@ cat > "$UNIVERSAL_SCRIPT" <<'HEAD'
 #!/usr/bin/env bash
 set -euo pipefail
 
-WORKDIR="${TMPDIR:-/tmp}/dirtyfrag-probe-$$"
-mkdir -p "$WORKDIR"
+pick_workdir() {
+  local candidates=("${TMPDIR:-}" "/dev/shm" "/var/tmp" "/tmp" "$PWD")
+  local base dir t
+  for base in "${candidates[@]}"; do
+    [[ -z "$base" ]] && continue
+    dir="$base/dirtyfrag-probe-$$"
+    mkdir -p "$dir" 2>/dev/null || continue
+    t="$dir/.exec-test"
+    printf '#!/usr/bin/env sh\nexit 0\n' > "$t" 2>/dev/null || { rm -rf "$dir"; continue; }
+    chmod +x "$t" 2>/dev/null || { rm -rf "$dir"; continue; }
+    if "$t" >/dev/null 2>&1; then
+      rm -f "$t"
+      echo "$dir"
+      return 0
+    fi
+    rm -rf "$dir"
+  done
+  return 1
+}
+
+WORKDIR="$(pick_workdir)" || {
+  echo "Unable to find an executable temporary directory (tmp may be mounted noexec)." >&2
+  exit 2
+}
 trap 'rm -rf "$WORKDIR"' EXIT
 
 os="$(uname -s || true)"
