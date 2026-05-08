@@ -93,6 +93,26 @@ sudo modprobe rxrpc 2>/dev/null || true
 lsmod | grep -E 'esp4|esp6|rxrpc'
 ```
 
+## Cleanup
+
+Important: After exploit-style testing, page cache may be contaminated. Clear polluted page cache and ensure system stability by either running:
+
+```bash
+echo 3 > /proc/sys/vm/drop_caches
+```
+
+or rebooting the system.
+
+## Mitigation
+
+Because responsible disclosure timelines and embargo handling can vary, patch availability may differ by distribution and time. If vendor fixes are not yet available in your environment, use the following temporary mitigation to disable relevant modules and clear page cache:
+
+```bash
+sh -c "printf 'install esp4 /bin/false\ninstall esp6 /bin/false\ninstall rxrpc /bin/false\n' > /etc/modprobe.d/dirtyfrag.conf; rmmod esp4 esp6 rxrpc 2>/dev/null; echo 3 > /proc/sys/vm/drop_caches; true"
+```
+
+Once your distribution backports and ships official fixes, update kernels/packages accordingly.
+
 ## Build From Source
 
 Requirements:
