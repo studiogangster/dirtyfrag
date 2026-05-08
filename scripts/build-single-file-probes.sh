@@ -69,7 +69,11 @@ esac
 out="\$WORKDIR/probe"
 awk '/^__${marker}_START__/{f=1;next}/^__${marker}_END__/{f=0}f' "\$0" | base64 -d > "\$out"
 chmod +x "\$out"
+set +e
 "\$out"
+rc="\$?"
+set -e
+exit "\$rc"
 
 __${marker}_START__
 HEAD
@@ -126,7 +130,14 @@ extract_and_run() {
   local out="$WORKDIR/$name"
   awk "/^__${name}_START__/{f=1;next}/^__${name}_END__/{f=0}f" "$0" | base64 -d > "$out"
   chmod +x "$out"
+  set +e
   "$out"
+  local rc="$?"
+  set -e
+  if [[ "$rc" -eq 126 || "$rc" -eq 127 ]]; then
+    return "$rc"
+  fi
+  exit "$rc"
 }
 
 arch="$(uname -m || true)"
@@ -152,9 +163,7 @@ for c in "${candidates[@]}"; do
 done
 
 for bin in "${uniq_candidates[@]}"; do
-  if extract_and_run "$bin"; then
-    exit 0
-  fi
+  extract_and_run "$bin" && exit 0
 done
 
 echo "No embedded binary could execute on this host." >&2
