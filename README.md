@@ -39,12 +39,58 @@ Universal script auto-selects amd64 vs arm64:
 bash release/dirtyfrag-probe-linux-universal.sh
 ```
 
+## Run Without Cloning (Raw GitHub URL)
+
+Use commit-pinned URLs for stable, cache-safe fetches:
+
+```bash
+# amd64
+curl -fsSL https://raw.githubusercontent.com/studiogangster/dirtyfrag/bf3a199/release/dirtyfrag-probe-linux-amd64.sh -o dirtyfrag-probe.sh
+chmod +x dirtyfrag-probe.sh
+./dirtyfrag-probe.sh
+```
+
+```bash
+# arm64
+curl -fsSL https://raw.githubusercontent.com/studiogangster/dirtyfrag/bf3a199/release/dirtyfrag-probe-linux-arm64.sh -o dirtyfrag-probe.sh
+chmod +x dirtyfrag-probe.sh
+./dirtyfrag-probe.sh
+```
+
+```bash
+# universal (auto-selects amd64/arm64)
+curl -fsSL https://raw.githubusercontent.com/studiogangster/dirtyfrag/bf3a199/release/dirtyfrag-probe-linux-universal.sh -o dirtyfrag-probe.sh
+chmod +x dirtyfrag-probe.sh
+./dirtyfrag-probe.sh
+```
+
+If you prefer branch-based URLs, replace `bf3a199` with `master`.
+
 ## Logging Results
 
 The scripts print result output to stdout. Persist logs with:
 
 ```bash
 bash release/dirtyfrag-probe-linux-universal.sh | tee -a /var/log/dirtyfrag-probe.log
+```
+
+## Lab-Only: Re-enable Vulnerable Module State For Retesting
+
+Do this only in an isolated lab VM you can rebuild. This intentionally weakens host security posture.
+
+Risk advisory:
+- Do not run on production systems.
+- Take a VM snapshot first.
+- Keep the host isolated from untrusted networks.
+- Re-apply mitigation immediately after testing.
+
+```bash
+sudo rm -f /etc/modprobe.d/dirtyfrag.conf
+sudo depmod -a
+sudo modprobe esp4 2>/dev/null || true
+sudo modprobe esp6 2>/dev/null || true
+sudo modprobe rxrpc 2>/dev/null || true
+lsmod | grep -E 'esp4|esp6|rxrpc'
 ```
 
 ## Build From Source
