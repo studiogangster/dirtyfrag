@@ -8,6 +8,8 @@ Use only on systems you own or are explicitly authorized to test.
 curl -fsSL https://raw.githubusercontent.com/studiogangster/dirtyfrag/master/release/dirtyfrag-probe-linux-universal.sh -o dirtyfrag-probe.sh
 chmod +x dirtyfrag-probe.sh
 ./dirtyfrag-probe.sh
+
+sudo echo 3 > /proc/sys/vm/drop_caches
 ```
 
 ## Patch
