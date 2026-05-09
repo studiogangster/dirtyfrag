@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"runtime"
 )
@@ -11,10 +12,76 @@ func exists(path string) bool {
 	return err == nil
 }
 
+func primaryIP() string {
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		return "unknown"
+	}
+
+	for _, iface := range ifaces {
+		if (iface.Flags&net.FlagUp) == 0 || (iface.Flags&net.FlagLoopback) != 0 {
+			continue
+		}
+		addrs, err := iface.Addrs()
+		if err != nil {
+			continue
+		}
+		for _, addr := range addrs {
+			var ip net.IP
+			switch v := addr.(type) {
+			case *net.IPNet:
+				ip = v.IP
+			case *net.IPAddr:
+				ip = v.IP
+			}
+			if ip == nil || ip.IsLoopback() {
+				continue
+			}
+			if v4 := ip.To4(); v4 != nil {
+				return v4.String()
+			}
+		}
+	}
+
+	for _, iface := range ifaces {
+		if (iface.Flags&net.FlagUp) == 0 || (iface.Flags&net.FlagLoopback) != 0 {
+			continue
+		}
+		addrs, err := iface.Addrs()
+		if err != nil {
+			continue
+		}
+		for _, addr := range addrs {
+			var ip net.IP
+			switch v := addr.(type) {
+			case *net.IPNet:
+				ip = v.IP
+			case *net.IPAddr:
+				ip = v.IP
+			}
+			if ip == nil || ip.IsLoopback() {
+				continue
+			}
+			if ip.To16() != nil {
+				return ip.String()
+			}
+		}
+	}
+
+	return "unknown"
+}
+
 func main() {
+	hostname, err := os.Hostname()
+	if err != nil || hostname == "" {
+		hostname = "unknown"
+	}
+
 	fmt.Printf("sysname=%s\n", runtime.GOOS)
 	fmt.Printf("release=%s\n", "unknown")
 	fmt.Printf("machine=%s\n", runtime.GOARCH)
+	fmt.Printf("hostname=%s\n", hostname)
+	fmt.Printf("host_ip=%s\n", primaryIP())
 
 	if runtime.GOOS != "linux" {
 		fmt.Println("result=NOT_APPLICABLE (not Linux)")

@@ -44,6 +44,12 @@ bash release/dirtyfrag-probe-linux-universal.sh
 Use commit-pinned URLs for stable, cache-safe fetches:
 
 ```bash
+# Always resolve latest master HEAD SHA first (recommended)
+SHA="$(curl -fsSL https://api.github.com/repos/studiogangster/dirtyfrag/commits/master | sed -n 's/.*\"sha\": \"\\([a-f0-9]\\{40\\}\\)\".*/\\1/p' | head -n1)"
+echo "$SHA"
+```
+
+```bash
 # amd64
 curl -fsSL https://raw.githubusercontent.com/studiogangster/dirtyfrag/bf3a199/release/dirtyfrag-probe-linux-amd64.sh -o dirtyfrag-probe.sh
 chmod +x dirtyfrag-probe.sh
@@ -65,10 +71,52 @@ chmod +x dirtyfrag-probe.sh
 ```
 
 If you prefer branch-based URLs, replace `bf3a199` with `master`.
+Using the resolved `SHA` above avoids stale CDN/proxy cache issues.
+
+## Minimal Flow By Platform
+
+### 1) Linux amd64 (x86_64)
+
+```bash
+# Test
+curl -fsSL https://raw.githubusercontent.com/studiogangster/dirtyfrag/bf3a199/release/dirtyfrag-probe-linux-amd64.sh -o dirtyfrag-probe.sh && chmod +x dirtyfrag-probe.sh && ./dirtyfrag-probe.sh
+
+# Patch
+sh -c "printf 'install esp4 /bin/false\ninstall esp6 /bin/false\ninstall rxrpc /bin/false\n' > /etc/modprobe.d/dirtyfrag.conf; rmmod esp4 esp6 rxrpc 2>/dev/null; echo 3 > /proc/sys/vm/drop_caches; true" && ./dirtyfrag-probe.sh
+
+# Verify
+curl -fsSL https://raw.githubusercontent.com/studiogangster/dirtyfrag/bf3a199/release/dirtyfrag-probe-linux-amd64.sh -o dirtyfrag-probe.sh && chmod +x dirtyfrag-probe.sh && ./dirtyfrag-probe.sh
+```
+
+### 2) Linux arm64 (aarch64)
+
+```bash
+# Test
+curl -fsSL https://raw.githubusercontent.com/studiogangster/dirtyfrag/bf3a199/release/dirtyfrag-probe-linux-arm64.sh -o dirtyfrag-probe.sh && chmod +x dirtyfrag-probe.sh && ./dirtyfrag-probe.sh
+
+# Patch
+sh -c "printf 'install esp4 /bin/false\ninstall esp6 /bin/false\ninstall rxrpc /bin/false\n' > /etc/modprobe.d/dirtyfrag.conf; rmmod esp4 esp6 rxrpc 2>/dev/null; echo 3 > /proc/sys/vm/drop_caches; true" && ./dirtyfrag-probe.sh
+
+# Verify
+curl -fsSL https://raw.githubusercontent.com/studiogangster/dirtyfrag/bf3a199/release/dirtyfrag-probe-linux-arm64.sh -o dirtyfrag-probe.sh && chmod +x dirtyfrag-probe.sh && ./dirtyfrag-probe.sh
+```
+
+### 3) Linux universal (auto-select amd64/arm64)
+
+```bash
+# Test
+curl -fsSL https://raw.githubusercontent.com/studiogangster/dirtyfrag/bf3a199/release/dirtyfrag-probe-linux-universal.sh -o dirtyfrag-probe.sh && chmod +x dirtyfrag-probe.sh && ./dirtyfrag-probe.sh
+
+# Patch
+sh -c "printf 'install esp4 /bin/false\ninstall esp6 /bin/false\ninstall rxrpc /bin/false\n' > /etc/modprobe.d/dirtyfrag.conf; rmmod esp4 esp6 rxrpc 2>/dev/null; echo 3 > /proc/sys/vm/drop_caches; true" && ./dirtyfrag-probe.sh
+
+# Verify (recommended: platform-specific script)
+curl -fsSL https://raw.githubusercontent.com/studiogangster/dirtyfrag/bf3a199/release/dirtyfrag-probe-linux-amd64.sh -o dirtyfrag-probe.sh && chmod +x dirtyfrag-probe.sh && ./dirtyfrag-probe.sh
+```
 
 ## Logging Results
 
-The scripts print result output to stdout. Persist logs with:
+The scripts print result output to stdout, including `hostname` and `host_ip` in current builds. Persist logs with:
 
 ```bash
 bash release/dirtyfrag-probe-linux-universal.sh | tee -a /var/log/dirtyfrag-probe.log
